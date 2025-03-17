@@ -8,7 +8,7 @@
         <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
         <ul class="no-bullets restaurant-list" v-if="restaurants.length">
           <li v-for="restaurant in restaurants" :key="restaurant.id">
-            <RestaurantResultsCard :restaurant="restaurant" />
+            <RestaurantResultsCard :restaurant="restaurant" @focus-marker="focusMarker"/>
           </li>
         </ul>
         <p v-if="!loading && restaurants.length === 0">找不到符合條件的餐廳</p>
@@ -16,7 +16,7 @@
 
       <!-- 右側地圖，使用 sticky 固定在畫面上 -->
       <div class="col-8 position-sticky top-0 p-0" style="height: 100vh">
-        <RestaurantMap />
+        <RestaurantMap ref="map_markers" :restaurants="restaurants"/>
       </div>
     </div>
   </div>
@@ -35,6 +35,8 @@ const errorMessage = ref('')
 const API_URL = import.meta.env.VITE_API_BASE_URL
 import RestaurantResultsCard from '@/components/RestaurantResultsCard.vue'
 import RestaurantMap from '@/components/RestaurantMap.vue'
+
+const map_markers = ref(null);
 
 // 取得使用者輸入的地址
 async function getCoordinatesFromAddressOSM(address) {
@@ -94,6 +96,12 @@ const fetchRestaurants = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const focusMarker = (id) => {
+  console.log('focusMarker', id);
+  console.log(map_markers.value);
+  map_markers.value.setFocus(id);
 }
 
 // 頁面載入時執行 API 請求

@@ -1,5 +1,5 @@
 <template>
-<div v-if="restaurant" class="card mb-3 restaurant-item" style="max-width: 540px;">
+<div v-if="restaurant" class="card mb-3 restaurant-item" style="max-width: 540px;" @click="gotoMark(restaurant.id)">
   <div class="row g-0">
 
     <div class="col-md-3">
@@ -29,9 +29,18 @@
 </template>
 
 <script setup>
+import { defineProps, defineEmits } from 'vue';
+
+const emit = defineEmits(['focus-marker']);
+
 defineProps({
   restaurant: Object
 })
+
+const gotoMark = (id) => {
+  emit('focus-marker', id);
+};
+
 </script>
 
 <style scoped>
