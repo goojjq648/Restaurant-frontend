@@ -4,6 +4,7 @@
       <div class="home-content">
         <h1 class="text-center search-title">探索美食</h1>
         <span class="search-content">無論在哪裡都能尋找想吃的美食</span>
+        <!-- 搜尋框 -->
         <SearchFood />
 
         <!-- 熱門搜尋推薦 -->
