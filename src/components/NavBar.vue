@@ -21,42 +21,69 @@
             <router-link to="/" class="nav-link">首頁</router-link>
           </li>
           <li class="nav-item ms-lg-auto">
-            <router-link to="/login" class="nav-link">會員登入</router-link>
+            <!-- <router-link to="/login" class="nav-link">會員登入</router-link> -->
+            <a href="#" @click.prevent="ToggleLoginModal" class="nav-link">會員登入</a>
           </li>
           <li class="nav-item">
-            <SearchFood v-if="showSearchFoodBar" class="search-navbar"/>
+            <SearchFood v-if="showSearchFoodBar" class="search-navbar" />
           </li>
         </ul>
       </div>
     </div>
   </nav>
+  <template v-if="isclicklogin">
+    <RestaurantLogin
+      ref="RestaurantLoginModal"
+      title="會員登入"
+      @closeLoginModal="ToggleLoginModal"
+      />
+  </template>
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ref } from 'vue'
 import SearchFood from '@/components/SearchFood.vue'
+import RestaurantLogin from './RestaurantLogin.vue'
 
-const route = useRoute();
+const route = useRoute()
+
+const islogin = ref(false)
+const isclicklogin = ref(false)
+const RestaurantLoginModal = ref(null)
 
 //後面要改成只有餐廳搜尋結果頁面跟餐廳細節頁面要顯示
-const showSearchFoodBar = computed(()=>{
+const showSearchFoodBar = computed(() => {
   // return route.path === '/'
-  return route.path.startsWith('/search') || route.path.startsWith('/restaurant/');
+  return route.path.startsWith('/search') || route.path.startsWith('/restaurant/')
+})
+
+const ToggleLoginModal = () => {
+  isclicklogin.value = !isclicklogin.value;
+  console.log("isclicklogin.value",isclicklogin.value);
+}
+
+watch(RestaurantLoginModal, (newCount, oldCount) => {
+  console.log(newCount);
+  if(newCount !== null && isclicklogin.value === true){
+    RestaurantLoginModal.value.openLoginModal();
+  }
 });
+
 
 </script>
 
 <style scoped>
-  .custom-navbar {
-    background-color: #faf4d8;
-  }
+.custom-navbar {
+  background-color: #faf4d8;
+}
 
-  .search-navbar {
-    display: flex;
-    align-items: center;
-    margin-left: auto;
-    padding-right: 1rem;
-    max-width: 300px; /* 限制寬度 */
-  }
+.search-navbar {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  padding-right: 1rem;
+  max-width: 300px; /* 限制寬度 */
+}
 </style>
