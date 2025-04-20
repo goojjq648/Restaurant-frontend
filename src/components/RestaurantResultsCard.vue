@@ -1,5 +1,5 @@
 <template>
-<div v-if="restaurant" class="card mb-3 restaurant-item" style="max-width: 540px;" @click="gotoMark(restaurant.id)">
+<div v-if="restaurant" class="card mb-3 restaurant-item" @click="gotoMark(restaurant.id)">
   <div class="row g-0">
 
     <div class="col-md-3">
@@ -54,6 +54,8 @@ const gotoMark = (id) => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: box-shadow 0.3s ease;
   cursor: pointer;
+
+  width: 100%;
 }
 
 .restaurant-item:hover {
