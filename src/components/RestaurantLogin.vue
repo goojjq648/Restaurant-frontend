@@ -75,94 +75,46 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { Modal } from 'bootstrap'
-import { nextTick } from 'vue'
+import { useGoogleLogin } from '@/composables/useGoogleLogin'
+import { useUserStore } from '@/stores/user';
 
+// props 定義
 defineProps({ title: String });
 const emit = defineEmits(['closeLoginModal']);
 
-const googleClientID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+//pina
+const userStore = useUserStore();
+const user = computed(()=> userStore.user);
 
-const user = ref(null);
 const quicklogin = ref(false);
 
-function handleCredentialResponse(response) {
-  const id_token = response.credential;
+// google login
+const {
+  loadGoogleSdk,
+  initGoogleLogin,
+  renderGoogleButton,
+  logout
+} = useGoogleLogin()
 
-  fetch(BACKEND_URL + 'api/google/callback', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ id_token }),
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      console.log('登入成功:', data)
-      localStorage.setItem('user', JSON.stringify(data))
-      user.value = data
-    })
-    .catch((error) => {
-      console.error('登入失敗:', error)
-    })
-}
-
-function initGoogleLogin() {
-  window.google.accounts.id.initialize({
-    client_id: googleClientID,
-    callback: handleCredentialResponse,
-  })
-
-  window.google.accounts.id.renderButton(document.getElementById('google_login'), {
-    theme: 'outline',
-    size: 'large',
-  })
-}
-
-function renderGoogleButton() {
-  // 等待 DOM 更新 等畫面更新完再 render 按鈕
-  nextTick(() => {
-    const loginDiv = document.getElementById('google_login')
-    if (loginDiv) {
-      loginDiv.innerHTML = ''
-      window.google.accounts.id.renderButton(loginDiv, {
-        theme: 'outline',
-        size: 'large',
-      })
-    }
-  })
-}
-
-function logout() {
-  localStorage.removeItem('user')
-  user.value = null
-
-  renderGoogleButton()
-}
 
 const openLoginModal = () => {
   const modalElement = document.getElementById('RestaurantLogin')
   if (modalElement) {
     const modal = new Modal(modalElement)
-    modal.show()
+    modal.show();
   }
 }
 
 const leaveQuickLogin = () => {
   quicklogin.value = false
-  renderGoogleButton()
+  renderGoogleButton();
 }
 
 defineExpose({ openLoginModal })
 
 onMounted(() => {
-  const savedUser = localStorage.getItem('user')
-  if (savedUser) {
-    user.value = JSON.parse(savedUser)
-  }
-
   const LoginModal = document.getElementById('RestaurantLogin')
   if (LoginModal) {
     LoginModal.addEventListener('hidden.bs.modal', () => {
@@ -170,18 +122,10 @@ onMounted(() => {
     })
   }
 
-  // 避免重複加載
-  if (!document.getElementById('google_sdk')) {
-    const script = document.createElement('script')
-    script.src = 'https://accounts.google.com/gsi/client'
-    script.id = 'google_sdk'
-    script.async = true
-    script.defer = true
-    script.onload = initGoogleLogin
-    document.head.appendChild(script)
-  } else {
+  loadGoogleSdk(() => {
     initGoogleLogin();
-  }
+    renderGoogleButton();
+  })
 })
 </script>
 
