@@ -35,9 +35,12 @@ function renderGoogleButton(selector = '#google_login', options = {}) {
 }
 
 export function useGoogleLogin() {
-  const userStore = useUserStore();
+  const userStore = useUserStore()
+
   function handleCredentialResponse(response) {
     const id_token = response.credential
+
+    userStore.setUserState(userStore.AuthStatus.LOGGING_IN)
 
     fetch(BACKEND_URL + 'api/google/callback', {
       method: 'POST',
@@ -63,10 +66,9 @@ export function useGoogleLogin() {
   }
 
   function logout() {
-    userStore.logout();
-    renderGoogleButton();
+    userStore.logout()
+    renderGoogleButton()
   }
-
 
   return {
     loadGoogleSdk,

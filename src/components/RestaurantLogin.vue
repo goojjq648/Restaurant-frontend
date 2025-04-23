@@ -18,9 +18,24 @@
             @click="closeLoginModal"
           ></button>
         </div>
-
         <div class="modal-body text-center">
-          <form v-if="quicklogin">
+          <form v-if="currentLoginMode === LOGIN_MODE.REGISTER">
+            <div class="mb-3">
+              <label for="exampleInputEmail1" class="form-label">電子郵件</label>
+              <input
+                type="email"
+                class="form-control"
+                id="exampleInputEmail1"
+                aria-describedby="emailHelp"
+              />
+            </div>
+            <div class="mb-3">
+              <label for="exampleInputPassword1" class="form-label">密碼</label>
+              <input type="password" class="form-control" id="exampleInputPassword1" />
+            </div>
+            <button type="submit" class="btn btn-primary">註冊</button>
+          </form>
+          <form v-else-if="currentLoginMode === LOGIN_MODE.QUICK_LOGIN">
             <div class="mb-3">
               <label for="exampleInputEmail1" class="form-label">電子郵件</label>
               <input
@@ -37,17 +52,20 @@
             <div>
               <p class="text-muted">
                 還沒有帳號嗎？
-                <button type="button" class="register-link" >立即註冊</button>
+                <button type="button" class="register-link" @click="switchLoginMode(LOGIN_MODE.REGISTER)">立即註冊</button>
               </p>
             </div>
             <button type="submit" class="btn btn-primary">登入</button>
           </form>
-          <div v-else-if="!user && !quicklogin" class="login-options">
+          <div v-else-if="!user && currentLoginMode === LOGIN_MODE.LOGIN" class="login-options">
             <p class="mb-3 text-muted text-center">請選擇登入方式：</p>
             <div id="google_login" class="d-flex justify-content-center mb-2"></div>
             <div class="text-center">
               <p class="text-muted">或</p>
-              <button class="btn btn-outline-secondary" @click="quicklogin = true">
+              <button
+                class="btn btn-outline-secondary"
+                @click="switchLoginMode(LOGIN_MODE.QUICK_LOGIN)"
+              >
                 使用帳號登入
               </button>
             </div>
@@ -60,10 +78,10 @@
 
         <div class="modal-footer border-0">
           <button
-            v-if="quicklogin"
+            v-if="currentLoginMode === LOGIN_MODE.QUICK_LOGIN || currentLoginMode === LOGIN_MODE.REGISTER"
             type="button"
             class="btn btn-secondary"
-            @click="leaveQuickLogin"
+            @click="switchLoginMode(LOGIN_MODE.LOGIN)"
           >
             返回
           </button>
@@ -75,41 +93,51 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import { Modal } from 'bootstrap'
 import { useGoogleLogin } from '@/composables/useGoogleLogin'
-import { useUserStore } from '@/stores/user';
+import { useUserStore, AuthStatus } from '@/stores/user'
 
 // props 定義
-defineProps({ title: String });
-const emit = defineEmits(['closeLoginModal']);
+defineProps({ title: String })
+const emit = defineEmits(['closeLoginModal'])
 
-//pina
-const userStore = useUserStore();
-const user = computed(()=> userStore.user);
+//pina - user
+const userStore = useUserStore()
+const user = computed(() => userStore.user)
+const user_state = computed(() => userStore.state)
 
-const quicklogin = ref(false);
+const LOGIN_MODE = {
+  LOGIN: 0,
+  QUICK_LOGIN: 1,
+  REGISTER: 2,
+}
+
+const currentLoginMode = ref(LOGIN_MODE.LOGIN)
 
 // google login
-const {
-  loadGoogleSdk,
-  initGoogleLogin,
-  renderGoogleButton,
-  logout
-} = useGoogleLogin()
+const { loadGoogleSdk, initGoogleLogin, renderGoogleButton, logout } = useGoogleLogin()
+
+function switchLoginMode(mode) {
+  if (user_state.value === AuthStatus.AUTHENTICATED) return
+  currentLoginMode.value = mode
+}
+
+watch(currentLoginMode, (newMode) => {
+  if (newMode === LOGIN_MODE.LOGIN && user.value === null) {
+    nextTick(() => {
+      renderGoogleButton()
+    })
+  }
+})
 
 
 const openLoginModal = () => {
   const modalElement = document.getElementById('RestaurantLogin')
   if (modalElement) {
     const modal = new Modal(modalElement)
-    modal.show();
+    modal.show()
   }
-}
-
-const leaveQuickLogin = () => {
-  quicklogin.value = false
-  renderGoogleButton();
 }
 
 defineExpose({ openLoginModal })
@@ -123,8 +151,8 @@ onMounted(() => {
   }
 
   loadGoogleSdk(() => {
-    initGoogleLogin();
-    renderGoogleButton();
+    initGoogleLogin()
+    renderGoogleButton()
   })
 })
 </script>
