@@ -49,7 +49,6 @@ import RestaurantLogin from './RestaurantLogin.vue'
 
 const route = useRoute()
 
-const islogin = ref(false)
 const isclicklogin = ref(false)
 const RestaurantLoginModal = ref(null)
 

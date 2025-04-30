@@ -19,17 +19,23 @@ export const useUserStore = defineStore('user', {
     setUserState(state) {
       this.state = state
     },
-    login(user) {
+    login(user, token) {
       this.user = user
-      localStorage.setItem('user', JSON.stringify(user))
-
+      localStorage.setItem('user', JSON.stringify(user));
+      //儲存token
+      localStorage.setItem('access_token', token.access);
+      localStorage.setItem('refresh_token', token.refresh);
+      console.log(user);
+      console.log(token);
       //登入後狀態
       this.setUserState(AuthStatus.AUTHENTICATED)
     },
     logout() {
       this.user = null
       localStorage.removeItem('user')
-
+      //清除token
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
       // 登出後狀態
       this.setUserState(AuthStatus.UNAUTHENTICATED)
     },
