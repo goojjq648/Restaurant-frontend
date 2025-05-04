@@ -1,6 +1,6 @@
 // composables/useGoogleLogin.js
 import { ref, nextTick, computed } from 'vue'
-import { useUserStore } from '@/stores/user'
+import { useUserStore, AuthStatus } from '@/stores/user'
 
 const googleClientID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
@@ -39,8 +39,9 @@ export function useGoogleLogin() {
 
   function handleCredentialResponse(response) {
     const id_token = response.credential
+    console.log('id_token:', id_token)
 
-    userStore.setUserState(userStore.AuthStatus.LOGGING_IN)
+    userStore.setUserState(AuthStatus.LOGGING_IN)
 
     fetch(BACKEND_URL + 'api/google/callback', {
       method: 'POST',
@@ -51,8 +52,15 @@ export function useGoogleLogin() {
     })
       .then((res) => res.json())
       .then((data) => {
-        console.log('登入成功:', data)
-        userStore.login(data)
+        if (data.error) {
+          console.error('登入失敗:', data.error)
+          alert(data.error)
+          return
+        }
+
+        alert('登入成功')
+        console.log('登入成功:', data.message)
+        userStore.login(data.user, data.tokens)
       })
       .catch((error) => {
         console.error('登入失敗:', error)
