@@ -15,7 +15,6 @@
             class="btn-close"
             data-bs-dismiss="modal"
             aria-label="Close"
-            @click="closeLoginModal"
           ></button>
         </div>
         <div class="modal-body text-center">
@@ -106,6 +105,9 @@
           </div>
           <div v-else-if="user">
             <p class="fs-5">👋 歡迎，{{ user.email }}</p>
+            <button type="button" class="register-link" @click="goToUserProfile">
+              修改個人資料
+            </button>
             <button class="btn btn-outline-danger mt-3" @click="logout">登出</button>
           </div>
         </div>
@@ -131,6 +133,7 @@
 
 <script setup>
 import { ref, onMounted, computed, watch, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import { Modal } from 'bootstrap'
 import { useGoogleLogin } from '@/composables/useGoogleLogin'
 import { useUserStore } from '@/stores/user'
@@ -163,6 +166,9 @@ const currentLoginMode = ref(LOGIN_MODE.LOGIN)
 //axios 定義
 const API_URL = import.meta.env.VITE_API_BASE_URL
 
+//router
+const router = useRouter()
+
 // google login
 const { loadGoogleSdk, initGoogleLogin, renderGoogleButton, logout } = useGoogleLogin()
 
@@ -171,6 +177,7 @@ function switchLoginMode(mode) {
     console.warn('無效的登入模式:', mode)
     return
   }
+
   currentLoginMode.value = mode
 }
 
@@ -197,21 +204,21 @@ async function register() {
     })
 
     if (response.status === StatusCodes.CREATED) {
-      userStore.login(response.data.user, response.data.tokens)
+      userStore.login(response.data.user, response.data.tokens);
 
       // 重置表單
-      email.value = ''
-      password.value = ''
-      confirmPassword.value = ''
+      email.value = '';
+      password.value = '';
+      confirmPassword.value = '';
 
-      switchLoginMode(LOGIN_MODE.LOGIN)
+      switchLoginMode(LOGIN_MODE.LOGIN);
     } else {
-      console.log('註冊失敗:', response.data.error)
+      console.log('註冊失敗:', response.data.error);
     }
   } catch (error) {
-    console.log(error)
+    console.log(error);
   } finally {
-    isSubmitting.value = false
+    isSubmitting.value = false;
   }
 }
 
@@ -245,6 +252,19 @@ async function quicklogin() {
     console.log(error)
   } finally {
     isSubmitting.value = false
+  }
+}
+
+function goToUserProfile() {
+  if (user.value) {
+    const modalEl = document.getElementById('RestaurantLogin')
+    const modal = Modal.getInstance(modalEl)
+    modal?.hide()
+
+    // 等 Modal 動畫結束後再跳轉
+    setTimeout(() => {
+      router.push({ name: 'UserProfile' })
+    }, 300)
   }
 }
 

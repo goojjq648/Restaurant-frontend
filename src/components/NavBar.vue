@@ -22,7 +22,7 @@
           </li>
           <li class="nav-item ms-lg-auto">
             <!-- <router-link to="/login" class="nav-link">會員登入</router-link> -->
-            <a href="#" @click.prevent="ToggleLoginModal" class="nav-link">會員登入</a>
+            <a href="#" @click.prevent="ToggleLoginModal" class="nav-link"> {{ userlogin }} </a>
           </li>
           <li class="nav-item">
             <SearchFood v-if="showSearchFoodBar" class="search-navbar" />
@@ -34,9 +34,9 @@
   <template v-if="isclicklogin">
     <RestaurantLogin
       ref="RestaurantLoginModal"
-      title="會員登入"
+      :title="userlogin"
       @closeLoginModal="ToggleLoginModal"
-      />
+    />
   </template>
 </template>
 
@@ -44,33 +44,35 @@
 import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ref } from 'vue'
+import { useUserStore, AuthStatus } from '@/stores/user'
 import SearchFood from '@/components/SearchFood.vue'
 import RestaurantLogin from './RestaurantLogin.vue'
 
-const route = useRoute()
+const route = useRoute();
 
-const isclicklogin = ref(false)
-const RestaurantLoginModal = ref(null)
+const isclicklogin = ref(false);
+const RestaurantLoginModal = ref(null);
+
+const userlogin = computed(() =>
+  userStore.state === AuthStatus.AUTHENTICATED ? '登出' : '會員登入'
+);
+const userStore = useUserStore();
 
 //後面要改成只有餐廳搜尋結果頁面跟餐廳細節頁面要顯示
 const showSearchFoodBar = computed(() => {
   // return route.path === '/'
-  return route.path.startsWith('/search') || route.path.startsWith('/restaurant/')
+  return route.path.startsWith('/search') || route.path.startsWith('/restaurant/');
 })
 
 const ToggleLoginModal = () => {
   isclicklogin.value = !isclicklogin.value;
-  console.log("isclicklogin.value",isclicklogin.value);
 }
 
 watch(RestaurantLoginModal, (newCount, oldCount) => {
-  console.log(newCount);
-  if(newCount !== null && isclicklogin.value === true){
+  if (newCount !== null && isclicklogin.value === true) {
     RestaurantLoginModal.value.openLoginModal();
   }
-});
-
-
+})
 </script>
 
 <style scoped>
