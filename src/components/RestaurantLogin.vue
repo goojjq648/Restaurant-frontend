@@ -1,6 +1,6 @@
 <template>
   <div
-    class="modal fade"
+    class="modal fade login-modal"
     id="RestaurantLogin"
     tabindex="-1"
     aria-labelledby="RestaurantLoginLabel"
@@ -302,6 +302,10 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.login-modal {
+  z-index: 9999;
+}
+
 .modal-content {
   border-radius: 1rem;
 }

@@ -22,7 +22,7 @@
           </li>
           <li class="nav-item ms-lg-auto">
             <!-- <router-link to="/login" class="nav-link">會員登入</router-link> -->
-            <a href="#" @click.prevent="ToggleLoginModal" class="nav-link"> {{ userlogin }} </a>
+            <a href="#" @click.prevent="ModalStore.openModal" class="nav-link"> {{ userlogin }} </a>
           </li>
           <li class="nav-item">
             <SearchFood v-if="showSearchFoodBar" class="search-navbar" />
@@ -31,48 +31,71 @@
       </div>
     </div>
   </nav>
-  <template v-if="isclicklogin">
+  <template v-if="ModalStore.isOpen">
     <RestaurantLogin
       ref="RestaurantLoginModal"
       :title="userlogin"
-      @closeLoginModal="ToggleLoginModal"
+      @closeLoginModal="ModalStore.closeModal"
     />
   </template>
 </template>
 
 <script setup>
-import { computed, watch } from 'vue'
+import { computed, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ref } from 'vue'
 import { useUserStore, AuthStatus } from '@/stores/user'
+import { useModalStore } from '@/stores/modal'
 import SearchFood from '@/components/SearchFood.vue'
 import RestaurantLogin from './RestaurantLogin.vue'
 
-const route = useRoute();
+const route = useRoute()
 
-const isclicklogin = ref(false);
-const RestaurantLoginModal = ref(null);
+// const isclicklogin = ref(false)
+const RestaurantLoginModal = ref(null)
 
 const userlogin = computed(() =>
-  userStore.state === AuthStatus.AUTHENTICATED ? '登出' : '會員登入'
-);
-const userStore = useUserStore();
+  userStore.state === AuthStatus.AUTHENTICATED ? '登出' : '會員登入',
+)
+
+const userStore = useUserStore()
+const ModalStore = useModalStore()
+
+// function showLoginModal() {
+//   if (ModalStore.isOpen) return
+//   ModalStore.openModal()
+
+//   nextTick(() => {
+//     RestaurantLoginModal.value.openLoginModal()
+//   })
+// }
+
+watch(
+  () => ModalStore.isOpen,
+  (newVal, oldVal) => {
+    nextTick(() => {
+      if (newVal === true) {
+        RestaurantLoginModal.value?.openLoginModal()
+      }
+    })
+  },
+)
 
 //後面要改成只有餐廳搜尋結果頁面跟餐廳細節頁面要顯示
 const showSearchFoodBar = computed(() => {
   // return route.path === '/'
-  return route.path.startsWith('/search') || route.path.startsWith('/restaurant/');
+  return route.path.startsWith('/search') || route.path.startsWith('/restaurant/')
 })
 
-const ToggleLoginModal = () => {
-  isclicklogin.value = !isclicklogin.value;
-}
+// const ToggleLoginModal = () => {
+//   isclicklogin.value = !isclicklogin.value;
+// }
 
-watch(RestaurantLoginModal, (newCount, oldCount) => {
-  if (newCount !== null && isclicklogin.value === true) {
-    RestaurantLoginModal.value.openLoginModal();
-  }
-})
+// watch(RestaurantLoginModal, (newCount, oldCount) => {
+//   if (newCount !== null && isclicklogin.value === true) {
+//     RestaurantLoginModal.value.openLoginModal();
+//   }
+// })
 </script>
 
 <style scoped>
