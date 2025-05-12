@@ -66,11 +66,15 @@
         <div class="card-body">
           <div class="detail-item">
             <h6>評分：</h6>
-            <span class="card-text">{{ restaurant.rating }}</span>
+            <span class="card-text">⭐ {{ restaurant.rating?.toFixed(1) || '尚無評分' }}</span>
           </div>
           <div class="detail-item">
             <h6>地址：</h6>
             <span class="card-text">{{ restaurant.address }}</span>
+          </div>
+          <div class="detail-item">
+            <h6>電話：</h6>
+            <p class="mb-1"><i class="bi bi-telephone-fill me-2 text-secondary"></i>{{ restaurant.phone_number || '無提供' }}</p>
           </div>
           <div class="detail-item">
             <h6>營業時間：</h6>
@@ -79,7 +83,9 @@
             </div>
           </div>
           <div class="view-map">
-            <a href="#" class="btn btn-primary" target="_blank" rel="noopener noreferrer">在 Google 地圖查看</a>
+            <a :href="restaurant.google_url" class="btn btn-primary" target="_blank" rel="noopener noreferrer"
+              >在 Google 地圖查看</a
+            >
           </div>
         </div>
       </div>
@@ -88,9 +94,103 @@
     <!-- 評論 -->
     <div class="comments-section">
       <h3 class="restaurant-detail-title">評論</h3>
-      <div v-for="comment in comments" :key="comment.id" class="comment-item">
-        <h5 class="comment-user">{{ comment.user }}</h5>
-        <p class="comment-content">{{ comment.content }}</p>
+      <div v-if="comments.length === 0">
+        <p>尚無評論，快來留下你的評論吧！</p>
+      </div>
+      <div v-else>
+        <p>共 {{ comments.length }} 筆評論</p>
+        <div v-for="comment in comments" :key="comment.id" class="comment-item">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div class="d-flex align-items-center">
+              <!-- 使用者頭像 -->
+              <img
+                :src="comment.avatar_url || defaultAvatar"
+                class="comment-avatar me-2"
+                alt="user avatar"
+              />
+              <!-- 使用者名稱 -->
+              <div>
+                <h6 class="comment-user mb-1">{{ comment.username }}</h6>
+                <!-- 星星評分 -->
+                <div class="comment-stars">
+                  <span
+                    v-for="i in 5"
+                    :key="i"
+                    class="star"
+                    :class="{ active: i <= comment.rating }"
+                    >★</span
+                  >
+                </div>
+              </div>
+            </div>
+            <!-- 評論時間 -->
+            <div class="text-end">
+              <small class="comment-timestamp">{{ formatCommentTime(comment) }}</small>
+              <div v-if="comment.username === currentUser" class="comment-actions mt-1">
+                <button class="btn btn-sm btn-outline-secondary me-1" @click="self_editing = true">
+                  編輯
+                </button>
+                <button class="btn btn-sm btn-outline-danger" @click="deleteComment(comment.id)">
+                  刪除
+                </button>
+              </div>
+            </div>
+          </div>
+          <p v-if="!self_editing" class="comment-content">
+            {{ comment.review }}
+          </p>
+          <form v-else class="row g-3">
+            <div class="mb-3">
+              <textarea class="form-control" id="exampleFormControlTextarea1" rows="3">{{ comment.review }}</textarea>
+            </div>
+            <div class="col-auto">
+              <button type="submit" class="btn btn-primary mb-3">確定</button>
+              <button type="button" class="btn btn-outline-secondary mb-3" @click="self_editing = false">
+                取消
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <p class="see-more">...查看更多</p>
+      </div>
+
+      <div class="comment-form">
+        <h5>新增評論</h5>
+        <form v-if="user" @submit.prevent="createComment">
+          <!-- 評分區塊 -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">評分</label>
+            <div class="star-rating">
+              <input type="radio" id="food-5" value="5" v-model="self_rating" name="food" />
+              <label for="food-5">★</label>
+              <input type="radio" id="food-4" value="4" v-model="self_rating" name="food" />
+              <label for="food-4">★</label>
+              <input type="radio" id="food-3" value="3" v-model="self_rating" name="food" />
+              <label for="food-3">★</label>
+              <input type="radio" id="food-2" value="2" v-model="self_rating" name="food" />
+              <label for="food-2">★</label>
+              <input type="radio" id="food-1" value="1" v-model="self_rating" name="food" />
+              <label for="food-1">★</label>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="comment" class="form-label">內容</label>
+            <textarea
+              v-model="self_content"
+              class="form-control"
+              id="comment"
+              name="comment"
+              rows="3"
+            ></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">送出</button>
+        </form>
+        <p v-if="!user">
+          <a href="#" class="btn btn-primary" @click.prevent="ModalStore.openModal"
+            >登入後發表評論
+          </a>
+        </p>
       </div>
     </div>
 
@@ -105,18 +205,180 @@
 </template>
 
 <script setup>
-defineProps({
+import { ReviewAPI } from '@/api/commentAPI'
+import { StatusCodes } from 'http-status-codes'
+import { computed, reactive, ref, watch, nextTick } from 'vue'
+import { useUserStore } from '@/stores/user'
+import { useModalStore } from '@/stores/modal'
+
+const props = defineProps({
   restaurant: {
     type: Object,
     required: true,
+    default: () => ({}),
   },
 })
 
-const comments = [
-  { id: 1, user: 'user1', content: '這家餐廳很好吃' },
-  { id: 2, user: 'user2', content: '這家餐廳很好吃' },
-  { id: 3, user: 'user3', content: '這家餐廳很好吃' },
-]
+const self_rating = ref(0)
+const self_content = ref('')
+const self_editing = ref(false)
+
+const defaultAvatar = '/images/user.png' //User icons created by kmg design - Flaticon
+
+const userStore = useUserStore()
+const user = computed(() => userStore.user)
+const currentUser = computed(() => userStore.user.username)
+const ModalStore = useModalStore()
+
+// const comments = [
+//   {
+//     id: 1,
+//     username: 'user1',
+//     avatar_url: '', // 你可以放預設圖或使用者上傳圖
+//     review: '這家餐廳很好吃',
+//     rating: 4,
+//     created_at: '2025-05-05T06:31:00Z',
+//     updated_at: '2025-05-05T06:31:00Z'
+//   },
+//   {
+//     id: 2,
+//     username: 'user2',
+//     avatar_url: '',
+//     review: '環境舒適，服務也不錯',
+//     rating: 5,
+//     created_at: '2025-05-05T06:40:00Z',
+//     updated_at: '2025-05-05T06:45:00Z'
+//   },
+// ]
+
+const comments = ref([])
+
+function formatCommentTime(comment) {
+  const created = new Date(comment.created_at)
+  const updated = new Date(comment.updated_at)
+
+  const isEdited = updated.getTime() !== created.getTime()
+
+  const displayDate = created.toLocaleDateString('zh-TW', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+
+  return isEdited ? `${displayDate}（已編輯）` : displayDate
+}
+
+async function getRestaurantReviews(restaurantId) {
+  // 取得評論
+  try {
+    const response = await ReviewAPI.getAllReview(restaurantId)
+    // const response = await axios.get(`${API_URL}/reviews/?restaurant_id=${restaurantId}`);
+    if (response.status === StatusCodes.OK) {
+      if (response.data.length > 0) {
+        comments.value = response.data
+        console.log('取得評論成功:', response.data)
+      }
+    } else {
+      if (response.status === StatusCodes.NO_CONTENT) {
+        console.log('沒有評論')
+      }
+    }
+  } catch (error) {
+    alert('取得評論失敗')
+    console.log(error)
+  }
+}
+
+// 新增評論
+async function createComment() {
+  const rating = self_rating.value
+  const content = self_content.value
+
+  if (!rating || !content) {
+    alert('請填寫完整評論')
+    return
+  }
+
+  const data = {
+    rating: rating,
+    review: content,
+    restaurant_id: props.restaurant.id,
+  }
+
+  try {
+    const response = await ReviewAPI.creatReview(data)
+    // const response = await axios.post(`${API_URL}/reviews/`, data);
+
+    if (response.status === StatusCodes.CREATED) {
+      console.log('新增評論成功:', response.data)
+      comments.value.push(response.data)
+
+      self_rating.value = 0
+      self_content.value = ''
+    }
+  } catch (error) {
+    if (error.response) {
+      const serverError = error.response.data?.error || '新增評論失敗'
+      alert(serverError)
+    } else {
+      alert('連線錯誤，請稍後再試')
+    }
+    console.error(error)
+  }
+}
+
+// function EditComment(review_id) {}
+
+// 更新評論
+async function updateComment(review_id, rating, content) {
+  // const response = await axios.put(`${API_URL}/reviews/${params.id}/`, params);
+  const data = {
+    rating: rating,
+    review: content,
+  }
+
+  try {
+    const response = await ReviewAPI.updateReview(review_id, data)
+
+    if (response.status === StatusCodes.OK) {
+      console.log('更新評論成功:', response.data)
+    }
+  } catch (error) {
+    console.log(error)
+    alert('更新評論失敗')
+  }
+}
+
+// 刪除評論
+async function deleteComment(review_id) {
+  // const response = await axios.delete(`${API_URL}/reviews/${params.id}/`);
+  try {
+    const response = await ReviewAPI.deleteReview(review_id)
+
+    if (response.status === StatusCodes.OK) {
+      console.log('刪除評論成功:', response.data)
+    }
+  } catch (error) {
+    console.log(error)
+    alert('刪除評論失敗')
+  }
+}
+
+const restaurantId = computed(() => props.restaurant?.id)
+
+watch(restaurantId, (newVal) => {
+  console.log('餐廳 ID 更新為：', newVal)
+
+  if (newVal) {
+    //清空評論
+    comments.value = [] // 重設
+    nextTick(() => {
+      getRestaurantReviews(newVal)
+    })
+  }
+})
 </script>
 
 <style scoped>
@@ -204,26 +466,88 @@ const comments = [
 
 .comments-section {
   width: 100%;
-  margin-top: 30px;
+  max-width: 700px;
+  margin: 40px auto;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
 }
 
 .comment-item {
   margin-bottom: 20px;
-  padding: 15px;
-  background-color: #f1f3f5;
+  padding: 15px 20px;
+  background-color: #f8f9fa;
+  border-left: 4px solid #0d6efd;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .comment-user {
-  font-weight: 500;
-  color: #495057;
-  margin-bottom: 8px;
+  font-weight: 600;
+  color: #343a40;
+  margin-bottom: 5px;
 }
 
 .comment-content {
   font-size: 1rem;
   color: #495057;
+  line-height: 1.5;
+}
+
+.comment-form {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #dee2e6;
+}
+
+.comment-form h5 {
+  margin-bottom: 15px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #212529;
+}
+
+.comment-form .form-control {
+  font-size: 1rem;
+  border-radius: 6px;
+}
+
+.comment-form button {
+  margin-top: 10px;
+  padding: 8px 16px;
+  font-size: 1rem;
+  border-radius: 6px;
+}
+
+.comment-timestamp {
+  font-size: 0.85rem;
+  color: #868e96;
+}
+
+.see-more {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  color: #0d6efd;
+  cursor: pointer;
+}
+
+.star-rating {
+  direction: rtl;
+  font-size: 1.5rem;
+}
+.star-rating input[type='radio'] {
+  display: none;
+}
+.star-rating label {
+  color: #ccc;
+  cursor: pointer;
+}
+.star-rating input[type='radio']:checked ~ label {
+  color: #ffc107;
+}
+.star-rating label:hover,
+.star-rating label:hover ~ label {
+  color: #ffc107;
 }
 
 .similar-restaurants {
@@ -244,5 +568,30 @@ const comments = [
   width: 100%;
   max-width: 250px;
   text-align: center;
+}
+
+.comment-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.comment-stars {
+  margin-top: 2px;
+}
+
+.star {
+  color: #ccc;
+  font-size: 1rem;
+}
+
+.star.active {
+  color: #ffc107;
+}
+
+.comment-actions button {
+  font-size: 0.8rem;
+  padding: 3px 8px;
 }
 </style>
