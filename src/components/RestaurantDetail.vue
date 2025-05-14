@@ -227,7 +227,7 @@ const defaultAvatar = '/images/user.png' //User icons created by kmg design - Fl
 
 const userStore = useUserStore()
 const user = computed(() => userStore.user)
-const currentUser = computed(() => userStore.user.username)
+const currentUser = computed(() => userStore.user?.username)
 const ModalStore = useModalStore()
 
 // const comments = [
@@ -375,10 +375,10 @@ watch(restaurantId, (newVal) => {
     //清空評論
     comments.value = [] // 重設
     nextTick(() => {
-      getRestaurantReviews(newVal)
+      getRestaurantReviews(newVal);
     })
   }
-})
+}, { immediate: true })
 </script>
 
 <style scoped>
