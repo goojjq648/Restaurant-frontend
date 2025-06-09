@@ -131,6 +131,7 @@ defineExpose({
 }
 
 .suggestions li {
+  color: #252525;
   list-style-type: none;
   padding: 12px;
   cursor: pointer;

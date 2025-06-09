@@ -4,7 +4,6 @@
 
 <script setup>
 import { ref, onMounted, watch } from "vue";
-import axios from "axios";
 import L, { marker } from "leaflet";
 
 
@@ -44,7 +43,6 @@ const initMap = (restaurants) => {
   if (!restaurants || !restaurants.length) {
     return;
   }
-
   // 初始化地圖
   map = L.map(mapContainer.value).setView([restaurants[0].latitude, restaurants[0].longitude], 14);
 

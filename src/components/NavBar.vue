@@ -22,7 +22,7 @@
           </li>
           <li class="nav-item ms-lg-auto">
             <!-- <router-link to="/login" class="nav-link">會員登入</router-link> -->
-            <a href="#" @click.prevent="ModalStore.openModal" class="nav-link"> {{ userlogin }} </a>
+            <a href="#" @click.prevent="ModalStore.openModal" class="nav-link login-link"> {{ userlogin }} </a>
           </li>
           <li class="nav-item">
             <SearchFood v-if="showSearchFoodBar" class="search-navbar" />
@@ -100,14 +100,50 @@ const showSearchFoodBar = computed(() => {
 
 <style scoped>
 .custom-navbar {
-  background-color: #faf4d8;
+  background-color: #fff8e1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  padding: 10px 20px;
+  font-weight: 500;
+}
+
+.navbar-brand {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fc4a1a;
+}
+
+.navbar-nav .nav-link {
+  color: #333;
+  transition: all 0.2s ease-in-out;
+}
+
+.navbar-nav .nav-link:hover {
+  color: #fc4a1a;
+}
+
+.navbar-nav .router-link-active {
+  font-weight: 700;
+  border-bottom: 2px solid #fc4a1a;
 }
 
 .search-navbar {
   display: flex;
   align-items: center;
-  margin-left: auto;
-  padding-right: 1rem;
-  max-width: 300px; /* 限制寬度 */
+  margin-left: 1rem;
+  max-width: 300px;
+}
+
+.login-link {
+  border: 1px solid #fc4a1a;
+  border-radius: 20px;
+  padding: 4px 12px;
+  color: #fc4a1a;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.login-link:hover {
+  background-color: #fc4a1a;
+  color: white;
 }
 </style>
