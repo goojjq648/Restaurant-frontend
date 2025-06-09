@@ -1,9 +1,13 @@
 <template>
+  <div v-if="loading" class="cat-loading-container">
+    <Loading />
+  </div>
+
   <div class="container-fluid search-result-content">
     <div class="row">
       <!-- 左側餐廳列表 -->
       <div class="col-4 d-flex flex-column h-100 overflow-auto restaurant-list-container">
-        <h4>搜尋結果</h4>
+        <h4 v-if="!loading">搜尋結果</h4>
         <!-- 篩選條件 -->
         <div
           v-if="loading === false"
@@ -33,7 +37,9 @@
           </div>
         </div>
 
-        <p v-if="loading">載入中...</p>
+        <p v-if="loading">
+          <!-- 載入中... -->
+        </p>
         <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
         <ul class="no-bullets restaurant-list" v-if="restaurants.length">
           <li v-for="restaurant in restaurants" :key="restaurant.id">
@@ -64,6 +70,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import Loading from '@/components/Loading.vue'
 import axios from 'axios'
 
 const route = useRoute()
@@ -100,6 +107,9 @@ const fetchRestaurants = async () => {
 
   let coordinates = null
 
+  const MIN_DURATION = 4500
+  const delay = new Promise((resolve) => setTimeout(resolve, MIN_DURATION))
+
   //先取得座標
   const response = await axios.get(`${API_URL}/search/location/`, {
     params: {
@@ -120,16 +130,19 @@ const fetchRestaurants = async () => {
   }
 
   try {
-    const response = await axios.get(`${API_URL}/restaurants/`, {
-      params: {
-        location: route.query.location,
-        category: route.query.category,
-        lat: coordinates?.lat, // 可能為 null
-        lng: coordinates?.lng, // 可能為 null
-      },
-    })
+    const [restaurantRes] = await Promise.all([
+      axios.get(`${API_URL}/restaurants/`, {
+        params: {
+          location: route.query.location,
+          category: route.query.category,
+          lat: coordinates?.lat,
+          lng: coordinates?.lng,
+        },
+      }),
+      delay,
+    ])
 
-    restaurants.value = response.data
+    restaurants.value = restaurantRes.data
   } catch (error) {
     errorMessage.value = '獲取餐廳失敗'
     console.error('錯誤：', error)
@@ -192,7 +205,7 @@ const calculateDrawerHeight = () => {
 }
 
 // 頁面載入時執行 API 請求
-onMounted(() => {
+onMounted(async () => {
   calculateNavTop()
   calculateRestaurantListTop()
   calculateDrawerHeight()
@@ -229,5 +242,16 @@ watch(() => route.query, fetchRestaurants)
 .filter-bar {
   border: 1px solid #ddd;
   background-color: #f8f9fa; /* Bootstrap 淺灰背景 */
+}
+
+.cat-loading-container {
+  position: fixed;
+  inset: 0; /* 等同 top:0; bottom:0; left:0; right:0 */
+  z-index: 9999;
+  background-color: #fff8e1; /* 或其他底色 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 </style>
