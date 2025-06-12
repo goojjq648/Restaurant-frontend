@@ -7,7 +7,7 @@
     <div class="row">
       <!-- 左側餐廳列表 -->
       <div class="col-4 d-flex flex-column h-100 overflow-auto restaurant-list-container">
-        <h4 v-if="!loading">搜尋結果</h4>
+        <h4 v-if="!loading">搜尋結果: {{ route.query.location }}{{ route.query.category }}</h4>
         <!-- 篩選條件 -->
         <div
           v-if="loading === false"
@@ -21,7 +21,8 @@
               style="width: 160px"
               @change="applyFilters"
             >
-              <option disabled value="">排序方式</option>
+              <option value="distance_asc">距離近到遠</option>
+              <option value="distance_desc">距離遠到近</option>
               <option value="rating_desc">評分高到低</option>
               <option value="rating_asc">評分低到高</option>
             </select>
@@ -83,6 +84,7 @@ import RestaurantResultsCard from '@/components/RestaurantResultsCard.vue'
 import RestaurantMap from '@/components/RestaurantMap.vue'
 import RestaurantDetail from '@/components/RestaurantDetail.vue'
 import Drawer from '@/components/Drawer.vue'
+import { RestaurantAPI } from '@/api/commentAPI'
 
 const API_URL = import.meta.env.VITE_API_BASE_URL
 const map_markers = ref(null)
@@ -93,10 +95,10 @@ const drawerTop = ref(0)
 const drawerLeft = ref(0)
 const drawerHeight = ref(0)
 
-const sortOption = ref('')
+const sortOption = ref('distance_asc')
 
 // 取得搜尋參數，發送 API 請求
-const fetchRestaurants = async () => {
+const fetchRestaurants = async (sort_by='distance', order='asc', is_open_now=-1) => {
   loading.value = true
   errorMessage.value = ''
 
@@ -131,16 +133,16 @@ const fetchRestaurants = async () => {
 
   try {
     const [restaurantRes] = await Promise.all([
-      axios.get(`${API_URL}/restaurants/`, {
-        params: {
-          location: route.query.location,
-          category: route.query.category,
-          lat: coordinates?.lat,
-          lng: coordinates?.lng,
-        },
-      }),
+      RestaurantAPI.getAllRestaurants(
+        route.query.location,
+        route.query.category,
+        coordinates?.lat,
+        coordinates?.lng,
+        sort_by,
+        order,
+        is_open_now),
       delay,
-    ])
+    ]);
 
     restaurants.value = restaurantRes.data
   } catch (error) {
@@ -204,13 +206,19 @@ const calculateDrawerHeight = () => {
   drawerHeight.value = screenHeight - drawerTop.value - marginBottom
 }
 
+const applyFilters = () => {
+  const [sort_by, order] = sortOption.value.split('_');
+  // console.log(sort_by, order);
+  fetchRestaurants(sort_by, order, -1);
+}
+
 // 頁面載入時執行 API 請求
 onMounted(async () => {
   calculateNavTop()
   calculateRestaurantListTop()
   calculateDrawerHeight()
   calculateDrawerLeft()
-  fetchRestaurants()
+  fetchRestaurants('distance', 'asc', -1)
 })
 
 // 當網址的 Query 變更時，自動重新載入搜尋結果
