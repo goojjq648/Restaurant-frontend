@@ -53,12 +53,23 @@ import { useRouter } from 'vue-router'
 import SearchFood from '@/components/SearchFood.vue'
 import RestaurantCard from '@/components/RestaurantCard.vue'
 import { SpecialRestaurantAPI } from '@/api/commentAPI'
+import { useSearch } from '@/composables/useSearch'
 
 const router = useRouter()
 const popularTags = ['🍜 拉麵', '🥩 燒肉', '🍲 火鍋', '🍣 日式料理', '🇰🇷 韓國料理', '🌱 素食']
 
+const { searchByCondition } = useSearch()
+
 const searchTag = (tag) => {
-  router.push({ path: '/search', query: { q: tag.replace(/^[^\w]+/, '') } })
+  // 移除所有開頭的 emoji、標點、空白等，只留下分類名稱
+  const cleanTag = tag.replace(/^[^\p{L}\p{N}]+/u, '').trim()
+
+  if (!cleanTag) {
+    alert('無效的標籤內容')
+    return
+  }
+
+  searchByCondition({ location: '', category: cleanTag })
 }
 
 const recommendedRestaurants = ref([])

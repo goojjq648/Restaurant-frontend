@@ -43,6 +43,7 @@ import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { debounce } from 'lodash'
 import SuggestionBox from './SuggestionBox.vue'
+import { useSearch } from '@/composables/useSearch'
 
 const API_URL = import.meta.env.VITE_API_BASE_URL
 const route = useRoute()
@@ -52,16 +53,18 @@ const searchLocation = ref('')
 const searchCategory = ref('')
 const suggestions = reactive([])
 const activeIndex = ref(-1)
-const inputRef = ref(null);
-const suggestionBox = ref(null);
+const inputRef = ref(null)
+const suggestionBox = ref(null)
+
+const { searchByCondition } = useSearch()
 
 const isInNavbar = computed(() => {
   return route.path.startsWith('/map') || route.path.startsWith('/restaurant/')
 })
 
 const updatePosition = () => {
-  suggestionBox.value?.updatePosition(); //確保位置正確
-};
+  suggestionBox.value?.updatePosition() //確保位置正確
+}
 
 // 取得建議結果 (用 debounce 防止過於頻繁)
 const getAddressSuggestions = debounce(async () => {
@@ -83,12 +86,11 @@ const getAddressSuggestions = debounce(async () => {
       ...response.data.filter((item) => item.city || item.district || item.road),
     )
     activeIndex.value = -1
-    suggestionBox.value?.updatePosition(); //更新位置
+    suggestionBox.value?.updatePosition() //更新位置
   } catch (error) {
     console.error('地址補全請求失敗:', error)
   }
 }, 300)
-
 
 const handleSelect = (suggestion) => {
   searchLocation.value = `${suggestion.city || ''}${suggestion.district || ''}${suggestion.road || ''}`
@@ -97,18 +99,7 @@ const handleSelect = (suggestion) => {
 
 // 觸發搜尋
 const search = () => {
-  if (!searchLocation.value.trim() && !searchCategory.value.trim()) {
-    alert('請輸入搜尋條件')
-    return
-  }
-
-  router.push({
-    path: '/search',
-    query: {
-      location: searchLocation.value.trim(),
-      category: searchCategory.value.trim(),
-    },
-  })
+  searchByCondition({ location: searchLocation.value, category: searchCategory.value });
 }
 </script>
 

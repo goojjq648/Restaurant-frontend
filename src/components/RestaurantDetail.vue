@@ -195,12 +195,12 @@
     </div>
 
     <!-- 相似餐廳 -->
-    <div class="similar-restaurants">
-      <h3 class="restaurant-detail-title">相似餐廳</h3>
-      <div class="similar-restaurant-items">
+    <!-- <div class="similar-restaurants"> -->
+      <!-- <h3 class="restaurant-detail-title">相似餐廳</h3> -->
+      <!-- <div class="similar-restaurant-items"> -->
         <!-- 可以填入相似餐廳項目 -->
-      </div>
-    </div>
+      <!-- </div> -->
+    <!-- </div> -->
   </div>
 </template>
 
