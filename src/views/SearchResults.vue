@@ -85,6 +85,7 @@ import RestaurantMap from '@/components/RestaurantMap.vue'
 import RestaurantDetail from '@/components/RestaurantDetail.vue'
 import Drawer from '@/components/Drawer.vue'
 import { RestaurantAPI } from '@/api/commentAPI'
+import { StatusCodes } from 'http-status-codes'
 
 const API_URL = import.meta.env.VITE_API_BASE_URL
 const map_markers = ref(null)
@@ -113,17 +114,29 @@ const fetchRestaurants = async (sort_by='distance', order='asc', is_open_now=-1)
   const delay = new Promise((resolve) => setTimeout(resolve, MIN_DURATION))
 
   //先取得座標
-  const response = await axios.get(`${API_URL}/search/location/`, {
-    params: {
-      location: route.query.location,
-    },
-  })
+  let response = null;
 
-  if (!response.data.longitude || !response.data.latitude) {
-    if (route.query.location) {
-      alert('找不到此地點的座標')
-      return
+  try {
+      response = await axios.get(`${API_URL}/search/location/`, {
+        params: {
+          location: route.query.location,
+        },
+      })
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === StatusCodes.NOT_FOUND ) {
+        errorMessage.value = '查無資料'
+      } else if (error.response?.status === StatusCodes.INTERNAL_SERVER_ERROR) {
+        errorMessage.value = '伺服器錯誤'
+      }
+    } else {
+      errorMessage.value = '未知錯誤'
     }
+
+    alert("查無地點資訊");
+    console.error('錯誤：', errorMessage.value);
+    loading.value = false
+    return;
   }
 
   coordinates = {
