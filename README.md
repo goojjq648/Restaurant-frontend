@@ -3,6 +3,7 @@
 這是餐廳探索網站的前端專案，採用 Vue 3 框架實作為單頁應用程式（SPA），搭配 Bootstrap 5 打造響應式介面，並透過 Axios 串接 Django RESTful API。
 
 使用者可以搜尋地區、查看餐廳地圖、點擊進入詳細資料頁，並支援登入機制與分類篩選。
+✨ **已支援 Docker 開發環境**，不需本機安裝 Node.js，即可快速啟動。
 
 - [Vue 3](https://vuejs.org/)（Composition API）
 - [Vite](https://vitejs.dev/) 開發建構工具
@@ -63,7 +64,21 @@ VITE_API_BASE_URL：實際呼叫後端 RESTful API 的 base URL
 
 VITE_GOOGLE_CLIENT_ID：Google OAuth 登入所需的 client ID
 
-### 啟動本地伺服器
+### 開發方式
+使用 Docker
+1. 安裝 [Docker Desktop](https://www.docker.com/get-started/)  
+（Windows/macOS 皆可, Linux 可安裝 Docker Engine）
+
+2. 建置並啟動開發環境
+```bash
+docker compose build
+docker compose up
 ```
-npm run dev
+
+初次啟動會自動安裝依賴，之後再次啟動只需：
+```bash
+docker compose up
 ```
+
+瀏覽器打開 http://localhost:5173
+進入開發模式 🚀
